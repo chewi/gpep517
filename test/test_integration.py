@@ -62,6 +62,8 @@ def test_integration(tmp_path, capfd, buildsys, verify_zipfile_cleanup,
 
     shutil.copytree(pathlib.Path("test/integration") / buildsys, tmp_path,
                     dirs_exist_ok=True)
+    shutil.copytree(pathlib.Path("test/test-pkg/testpkg"),
+                    tmp_path / "testpkg")
 
     with pushd(tmp_path):
         assert 0 == main(["", "build-wheel",
@@ -96,6 +98,8 @@ def test_integration_install(tmp_path, buildsys, verify_zipfile_cleanup,
 
     shutil.copytree(pathlib.Path("test/integration") / buildsys, tmp_path,
                     dirs_exist_ok=True)
+    shutil.copytree(pathlib.Path("test/test-pkg/testpkg"),
+                    tmp_path / "testpkg")
 
     destdir = tmp_path / "install"
     with pushd(tmp_path):
