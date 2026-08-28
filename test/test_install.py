@@ -1,4 +1,4 @@
-# (c) 2022-2025 Michał Górny
+# (c) 2022-2026 Michał Górny
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import contextlib
@@ -6,9 +6,12 @@ import importlib.machinery
 import importlib.util
 import os
 import pathlib
+import shutil
+import sys
 import sysconfig
 import typing
 
+import packaging.tags
 import pytest
 
 from gpep517 import __version__
@@ -379,3 +382,59 @@ def test_install_symlink_chain(tmp_path,
     assert expected_links == {path: tmp_path.joinpath(path).readlink()
                               for path, path_data in expected.items()
                               if path_data is not None and path_data[1]}
+
+
+BEST_TAG = next(packaging.tags.sys_tags())
+FREETHREADING = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
+IS_CPYTHON = sys.implementation.name == "cpython"
+
+
+@pytest.mark.parametrize(
+    ("wheel_name", "expected"),
+    [
+        ("test-1-py3-none-any.whl", True),
+        ("test-1-py2.py3-none-any.whl", True),
+        ("test-1-py38-none-any.whl", sys.version_info >= (3, 8)),
+        (f"test-1-{BEST_TAG}.whl", True),
+        (f"test-1-{BEST_TAG.interpreter}-none-any.whl", IS_CPYTHON),
+        (f"test-1-{BEST_TAG.interpreter}-{BEST_TAG.abi}-any.whl", False),
+        (f"test-1-{BEST_TAG.interpreter}-abi3-any.whl", False),
+        (f"test-1-py3-none-{BEST_TAG.platform}.whl", True),
+        (f"test-1-py38-none-{BEST_TAG.platform}.whl",
+         sys.version_info >= (3, 8)),
+        (f"test-1-{BEST_TAG.interpreter}-none-{BEST_TAG.platform}.whl", True),
+        (f"test-1-{BEST_TAG.interpreter}-abi3-{BEST_TAG.platform}.whl",
+         IS_CPYTHON and not FREETHREADING),
+        (f"test-1-{BEST_TAG.interpreter}-abi3t-{BEST_TAG.platform}.whl",
+         IS_CPYTHON and FREETHREADING and sys.version_info >= (3, 15)),
+        (f"test-1-{BEST_TAG.interpreter}-abi3.abi3t-{BEST_TAG.platform}.whl",
+         IS_CPYTHON),
+        (f"test-1-cp38-abi3-{BEST_TAG.platform}.whl",
+         IS_CPYTHON and sys.version_info >= (3, 8) and not FREETHREADING),
+        (f"test-1-cp38-abi3.abi3t-{BEST_TAG.platform}.whl",
+         IS_CPYTHON and sys.version_info >= (3, 8)),
+        (f"test-1-cp315-abi3.abi3t-{BEST_TAG.platform}.whl",
+         IS_CPYTHON and sys.version_info >= (3, 15)),
+        ("test-1-py3-none-win32.whl",
+         sysconfig.get_platform() == "win32"),
+        ("test-1-py3-none-linux_x86_64.whl",
+         sysconfig.get_platform() == "linux-x86_64"),
+    ]
+)
+def test_verify_tags(tmp_path,
+                     wheel_name: str,
+                     expected: bool,
+                     ) -> None:
+    shutil.copy("test/test-pkg/dist/test-1-py3-none-any.whl",
+                tmp_path / wheel_name)
+
+    ctx_mgr = (contextlib.nullcontext() if expected
+               else pytest.raises(RuntimeError,
+                                  match="not compatible with the system"))
+    args = (["", "install-wheel",
+             "--destdir", str(tmp_path),
+             "--verify-tags",
+             str(tmp_path / wheel_name)]
+            )
+    with ctx_mgr:
+        assert 0 == main(args)

@@ -105,7 +105,8 @@ def test_integration_install(tmp_path, buildsys, verify_zipfile_cleanup,
     with pushd(tmp_path):
         assert 0 == main(["", "install-from-source",
                           "--destdir", str(destdir),
-                          "--prefix", "/usr"])
+                          "--prefix", "/usr",
+                          "--verify-tags"])
 
     sitedir = destdir / (sysconfig.get_path("purelib", vars={"base": "/usr"})
                          .lstrip(os.path.sep))

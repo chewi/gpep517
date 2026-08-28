@@ -161,13 +161,16 @@ def add_install_args(parser):
                        action="store_true",
                        help="Symlink .pyc files between optimization levels "
                        "if their contents match")
-
     group.add_argument("--symlink-to",
                        type=PurePath,
                        help="Install symlinks to another directory rather "
                        "than files if they match respective paths "
                        "in the other directory (useful for deduplicating "
                        "packages across Python implementations)")
+    group.add_argument("--verify-tags",
+                       action="store_true",
+                       help="Verify wheel compatibility via platform "
+                       "compatibility tags (requires packaging)")
 
 
 def main(argv=sys.argv):

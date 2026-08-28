@@ -25,7 +25,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+tags = [
+    "packaging >= 20.9",
+]
 test = [
+    # for abi3t tags
+    "packaging >= 26.1",
     "pytest",
 ]
 test-full = [

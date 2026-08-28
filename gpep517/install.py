@@ -12,6 +12,17 @@ from pathlib import Path, PurePath
 from gpep517.utils import DEFAULT_PREFIX, install_scheme_dict, logger
 
 
+def verify_tags(wheel: Path) -> None:
+    from packaging.tags import sys_tags
+    from packaging.utils import parse_wheel_filename
+
+    wheel_tags = parse_wheel_filename(str(wheel.name))[-1]
+    if not any(compatible_tag in wheel_tags
+               for compatible_tag in sys_tags()):
+        raise RuntimeError(
+            f"Wheel {wheel} is not compatible with the system")
+
+
 def install_wheel_impl(args, wheel: Path):
     from installer import install
     from installer.destinations import SchemeDictionaryDestination
@@ -127,6 +138,9 @@ def install_wheel_impl(args, wheel: Path):
                 if filecmp.cmp(pyc1, pyc2):
                     pyc2.unlink()
                     pyc2.symlink_to(pyc1.name)
+
+    if args.verify_tags:
+        verify_tags(wheel)
 
     with WheelFile.open(wheel) as source:
         dest = DeduplicatingDestination(
