@@ -406,7 +406,7 @@ IS_CPYTHON = sys.implementation.name == "cpython"
         (f"test-1-{BEST_TAG.interpreter}-abi3-{BEST_TAG.platform}.whl",
          IS_CPYTHON and not FREETHREADING),
         (f"test-1-{BEST_TAG.interpreter}-abi3t-{BEST_TAG.platform}.whl",
-         IS_CPYTHON and FREETHREADING and sys.version_info >= (3, 15)),
+         IS_CPYTHON and FREETHREADING),
         (f"test-1-{BEST_TAG.interpreter}-abi3.abi3t-{BEST_TAG.platform}.whl",
          IS_CPYTHON),
         (f"test-1-cp38-abi3-{BEST_TAG.platform}.whl",
